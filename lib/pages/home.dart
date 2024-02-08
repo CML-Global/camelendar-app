@@ -1,4 +1,6 @@
 import 'package:camelendar/pages/auth.dart';
+import 'package:camelendar/pages/eventsDisplay.dart';
+import 'package:camelendar/pages/organiser_publisher.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -23,7 +25,7 @@ class _HomePageState extends State<HomePage> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: buildAppBar(),
-        body: buildHeroImage(),
+        body: buildHeroImage(context),
 
         // -------------------------------Footer--------------------------------
         floatingActionButton: Container(
@@ -54,7 +56,7 @@ class _HomePageState extends State<HomePage> {
   Container buildBottomNavbar() {
     return Container(
       color: Color.fromRGBO(30, 0, 20, .3),
-      height: 60,
+      height: 50,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
@@ -135,7 +137,13 @@ class _HomePageState extends State<HomePage> {
             itemBuilder: (BuildContext context) {
               return [
                 PopupMenuItem(
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const OrganiserPublisher()),
+                    );
+                  },
                   value: "submit_event",
                   child: const Row(
                     children: [
@@ -199,14 +207,13 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-Column buildHeroImage() {
+Column buildHeroImage(BuildContext context) {
   return Column(
     children: [
       Container(
         height: 320,
         child: Image(
           image: AssetImage('assets/images/home_img.png'),
-          
         ),
       ),
       Container(
@@ -238,7 +245,13 @@ Column buildHeroImage() {
                 ),
                 SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const EventDisplay()),
+                    );
+                  },
                   child: Text('Explore Events'),
                 ),
               ],

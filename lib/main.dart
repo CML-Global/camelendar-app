@@ -1,5 +1,7 @@
 import 'package:camelendar/pages/auth.dart';
+import 'package:camelendar/pages/eventsDisplay.dart';
 import 'package:camelendar/pages/home.dart';
+import 'package:camelendar/pages/organiser_publisher.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -18,7 +20,10 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         // '/': (context) => const HomePage(),
+        '/home': (context) => HomePage(),
         '/auth': (context) => Auth(),
+        '/events': (context) => const EventDisplay(),
+        '/org_pub': (context) => const OrganiserPublisher(),
       },
     );
   }
