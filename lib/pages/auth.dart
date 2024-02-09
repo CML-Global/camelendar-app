@@ -303,6 +303,7 @@ Container buildBottomNavbar() {
       children: <Widget>[
         Expanded(
             child: IconButton(
+              
                 icon: FaIcon(
                   FontAwesomeIcons.book,
                   color: Colors.white,

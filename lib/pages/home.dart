@@ -1,6 +1,7 @@
 import 'package:camelendar/pages/auth.dart';
 import 'package:camelendar/pages/eventsDisplay.dart';
 import 'package:camelendar/pages/organiser_publisher.dart';
+import 'package:camelendar/widgets/homeBottomNavbar.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -48,63 +49,12 @@ class _HomePageState extends State<HomePage> {
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
-        bottomNavigationBar: buildBottomNavbar(),
+        bottomNavigationBar: HomeBottomNavbar(),
       ),
     );
   }
 
-  Container buildBottomNavbar() {
-    return Container(
-      color: Color.fromRGBO(30, 0, 20, .3),
-      height: 50,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Expanded(
-              child: IconButton(
-                  icon: FaIcon(
-                    FontAwesomeIcons.book,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {})),
-          VerticalDivider(
-            thickness: .1,
-            color: Colors.white,
-          ),
-          Expanded(
-              child: IconButton(
-                  icon: FaIcon(
-                    FontAwesomeIcons.clipboardList,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {})),
-          VerticalDivider(
-            width: 25,
-            thickness: .1,
-            color: Colors.white,
-          ),
-          Expanded(
-              child: IconButton(
-                  icon: FaIcon(
-                    FontAwesomeIcons.mapLocationDot,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {})),
-          VerticalDivider(
-            thickness: .1,
-            color: Colors.white,
-          ),
-          Expanded(
-              child: IconButton(
-                  icon: FaIcon(
-                    FontAwesomeIcons.message,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {}))
-        ],
-      ),
-    );
-  }
+
 
   AppBar buildAppBar() {
     return AppBar(
