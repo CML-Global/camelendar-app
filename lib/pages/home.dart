@@ -25,7 +25,7 @@ class _HomePageState extends State<HomePage> {
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: buildAppBar(),
+        appBar: buildAppBar(''),
         body: buildHeroImage(context),
 
         // -------------------------------Footer--------------------------------
@@ -56,10 +56,10 @@ class _HomePageState extends State<HomePage> {
 
 
 
-  AppBar buildAppBar() {
+  AppBar buildAppBar(title) {
     return AppBar(
       toolbarHeight: 70,
-      title: Text('Camelendar',
+      title: Text(title,
           style: TextStyle(
             fontFamily: 'Cairo',
             color: Colors.white,

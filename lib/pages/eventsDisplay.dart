@@ -55,7 +55,7 @@ class _EventDisplayState extends State<EventDisplay> {
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: buildAppBar(context),
+        appBar: buildAppBar(context, 'Event', Color.fromRGBO(19, 22, 40, 1)),
         body: Container(
             margin: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
             padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
@@ -355,22 +355,22 @@ class _EventDisplayState extends State<EventDisplay> {
   }
 }
 
-AppBar buildAppBar(BuildContext context) {
+AppBar buildAppBar(BuildContext context,title,color) {
   return AppBar(
     toolbarHeight: 70,
-    title: Text('Events',
+    title: Text(title,
         style: TextStyle(
           fontFamily: 'Cairo',
           color: Colors.white,
           fontSize: 24,
           fontWeight: FontWeight.bold,
         )),
-    backgroundColor: Color.fromRGBO(19, 22, 40, 1),
+    backgroundColor: color,
     elevation: 0.5,
     actions: <Widget>[
       Container(
         decoration: BoxDecoration(
-          color: Color.fromRGBO(19, 22, 40, 1),
+          color: color,
         ),
         child: PopupMenuButton<String>(
           onSelected: (String result) {
