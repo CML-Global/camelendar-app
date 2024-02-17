@@ -25,7 +25,7 @@ class Message {
         )),
     Message(
         senderId: '3',
-        recipientId: '2',
+        recipientId: '1',
         text: ' ae  rzrazrazrefzfzef',
         createdAt: DateTime(2024, 01, 02, 10, 39, 39).add(
           const Duration(seconds: 130)

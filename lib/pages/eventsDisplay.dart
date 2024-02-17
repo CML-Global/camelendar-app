@@ -1,5 +1,6 @@
+import 'dart:convert';
 import 'dart:ui';
-
+import 'package:http/http.dart' as http;
 import 'package:camelendar/models/event_Model.dart';
 import 'package:camelendar/pages/auth.dart';
 import 'package:camelendar/pages/eventCalendar.dart';
@@ -7,6 +8,7 @@ import 'package:camelendar/pages/organiser_publisher.dart';
 import 'package:camelendar/widgets/eventBottomFilters.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 
 class EventDisplay extends StatefulWidget {
   const EventDisplay({Key? key}) : super(key: key);
@@ -19,7 +21,7 @@ class _EventDisplayState extends State<EventDisplay> {
   bool _showPastEvents = false;
   int footerIndex = 0;
   int _tabIndex = 0;
-
+  List<Event> eventList = [];
   void _onTabChanged(int index) {
     setState(() {
       _tabIndex = index;
@@ -28,24 +30,36 @@ class _EventDisplayState extends State<EventDisplay> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    List<EventModel> events = [];
-    events.add(EventModel(
-      title: 'Item1',
-      photo: 'assets/images/event_pic.jpg',
-      date: 'jun12 - jul14',
-      location: 'location',
-    ));
-    events.add(EventModel(
-      title: 'item2',
-      photo: 'assets/images/event_pic2.jpg',
-      date: 'jun12 - jul14',
-      location: 'location',
-    ));
-    void _getInitialInfo() {
-      events = EventModel.getEvents();
-    }
+  void initState() {
+    super.initState();
+    getDataHttpPackage();
+  }
 
+  void getDataHttpPackage() async {
+    try {
+      final url =
+          Uri.parse('https://camelworldmap.com/api/events?target=public');
+      var response = await http.get(url);
+      if (response.statusCode == 200) {
+        setState(() {
+          final List<dynamic> jsonData = jsonDecode(response.body);
+          eventList =
+              jsonData.map<Event>((json) => Event.fromJson(json)).toList();
+        });
+      } else {}
+      // print(jsonDecode(response.body));
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  String formatDateString(String dateString) {
+    DateTime dateTime = DateTime.parse(dateString);
+    return DateFormat('yyyy-MM-dd').format(dateTime);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         image: DecorationImage(
@@ -63,61 +77,58 @@ class _EventDisplayState extends State<EventDisplay> {
                 border:
                     Border.all(color: const Color.fromARGB(95, 255, 255, 255))),
             child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          const Expanded(
-                            child: TextField(
-                              style: TextStyle(color: Colors.white),
-                              cursorColor: Colors.white,
-                              decoration: InputDecoration(
-                                  prefixIconColor: Colors.red,
-                                  fillColor: Colors.white,
-                                  focusColor: Colors.white,
-                                  iconColor: Colors.white,
-                                  icon: Icon(Icons.search),
-                                  hintText: 'Search...',
-                                  hintStyle: TextStyle(
-                                      color:
-                                          Color.fromARGB(190, 158, 158, 158))),
-                            ),
-                          ),
-                          Column(
-                            children: [
-                              Switch(
-                                inactiveThumbColor: Colors.yellow,
-                                inactiveTrackColor: Colors.transparent,
-                                value: _showPastEvents,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _showPastEvents = value;
-                                  });
-                                },
-                                activeTrackColor: Colors.transparent,
-                                activeColor: Colors.orange,
-                              ),
-                            ],
-                          ),
-                          _showPastEvents
-                              ? Text(
-                                  'Show Past\n Events',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 8),
-                                )
-                              : Text(
-                                  'Show Current \n Events',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 8),
-                                )
-                        ],
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    const Expanded(
+                      child: TextField(
+                        style: TextStyle(color: Colors.white),
+                        cursorColor: Colors.white,
+                        decoration: InputDecoration(
+                            prefixIconColor: Colors.red,
+                            fillColor: Colors.white,
+                            focusColor: Colors.white,
+                            iconColor: Colors.white,
+                            icon: Icon(Icons.search),
+                            hintText: 'Search...',
+                            hintStyle: TextStyle(
+                                color: Color.fromARGB(190, 158, 158, 158))),
                       ),
-                    _tabIndex == 0 ?
-                      Expanded(
+                    ),
+                    Column(
+                      children: [
+                        Switch(
+                          inactiveThumbColor: Colors.yellow,
+                          inactiveTrackColor: Colors.transparent,
+                          value: _showPastEvents,
+                          onChanged: (value) {
+                            setState(() {
+                              _showPastEvents = value;
+                            });
+                          },
+                          activeTrackColor: Colors.transparent,
+                          activeColor: Colors.orange,
+                        ),
+                      ],
+                    ),
+                    _showPastEvents
+                        ? Text(
+                            'Show Current \n Events',
+                            style: TextStyle(color: Colors.white, fontSize: 8),
+                          )
+                        : Text(
+                            'Show Past\n Events',
+                            style: TextStyle(color: Colors.white, fontSize: 8),
+                          )
+                  ],
+                ),
+                _tabIndex == 0
+                    ? Expanded(
                         child: ListView.builder(
-                          itemCount: events.length,
+                          itemCount: eventList.length,
                           itemBuilder: (context, index) {
-                            final event = events[index];
+                            // final event = eventList[index];
                             return Card(
                               margin: EdgeInsets.symmetric(vertical: 15),
                               shadowColor:
@@ -131,178 +142,129 @@ class _EventDisplayState extends State<EventDisplay> {
                               ),
                               child: InkWell(
                                 onTap: () {},
-                                child: Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    // mainAxisAlignment: MainAxisAlignment.start,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 10),
+                                  child: Row(
+                                    // Change Column to Row for horizontal layout
                                     children: [
-                                      AspectRatio(
-                                        aspectRatio: 16 / 9,
-                                        child: Container(
-                                          child: Image(
-                                            image: AssetImage(event.photo),
-                                            fit: BoxFit.cover,
+                                      // Logo as a circle
+                                      ClipOval(
+                                        child: Image.network(
+                                          "https://camelworldmap.com/uploads/logos/${eventList[index].logo}",
+                                          width: 60, // Adjust size as needed
+                                          height: 60, // Adjust size as needed
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                eventList[index].title,
+                                                style: const TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Row(
+                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                children: [
+                                                  Icon(FontAwesomeIcons.calendar,color: Colors.white,size: 8,),
+                                                  SizedBox(width: 4,),
+                                                  Text(
+                                                    "Date: ${formatDateString(eventList[index].dateStart.toString())}",
+                                                    style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 8),
+                                                  ),
+                                                ],
+                                              ),
+                                              
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    FontAwesomeIcons.locationPin,
+                                                    color: Colors.white,
+                                                    size: 8,
+                                                  ),
+                                                  SizedBox(
+                                                    width: 4,
+                                                  ),
+                                                  Text(
+                                                    eventList[index].location,
+                                                    style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 8),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(height: 8),
-                                      Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceAround,
-                                              children: [
-                                                FaIcon(
-                                                  FontAwesomeIcons
-                                                      .unlockKeyhole,
-                                                  color: Colors.white,
-                                                  size: 14,
-                                                ),
-                                                SizedBox(
-                                                  width: 250,
-                                                  child: Text(
-                                                    event.title,
-                                                    style: const TextStyle(
-                                                        fontSize: 12,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color: Colors.white),
-                                                  ),
-                                                ),
-                                              ],
+                                      // Claim Ownership and Arrow Icon on the right
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceAround,
+                                        children: [
+                                          // IconButton(
+                                          //   onPressed: () {},
+                                          //   icon: FaIcon(
+                                          //     Icons.arrow_right_outlined,
+                                          //     size: 20,
+                                          //     color: Colors.red,
+                                          //   ),
+                                          // ),
+                                          SizedBox(
+                                            height: 20,
+                                          ),
+                                          Container(
+                                            margin: EdgeInsets.all(15),
+                                            height: 32,
+                                            width: 32,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                color: Colors
+                                                    .red, // Color of the border
+                                                width: 1, // Width of the border
+                                              ),
+                                              borderRadius: BorderRadius.circular(
+                                                  50), // Adjust the radius to make it more or less rounded
                                             ),
-                                            const SizedBox(height: 8),
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceAround,
-                                              children: [
-                                                FaIcon(
-                                                  FontAwesomeIcons.calendar,
-                                                  color: Colors.white,
-                                                  size: 10,
-                                                ),
-                                                SizedBox(
-                                                  width: 250,
-                                                  child: Text(
-                                                    event.date,
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 8,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
+                                            child: IconButton(
+                                              highlightColor: Colors.white,
+                                              splashColor: Colors.white,
+                                              focusColor: Colors.red,
+                                              onPressed: () {},
+                                              icon: Icon(
+                                                Icons.favorite_border_outlined,
+                                                size: 15,
+                                                color: Colors.red,
+                                              ),
+                                              // Adjust the padding to make the button larger or smaller
+                                              constraints:
+                                                  BoxConstraints(), // Apply constraints if needed to adjust the button's size
                                             ),
-                                            const SizedBox(height: 8),
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceAround,
-                                              children: [
-                                                FaIcon(
-                                                  FontAwesomeIcons
-                                                      .locationArrow,
-                                                  color: Colors.white,
-                                                  size: 14,
-                                                ),
-                                                SizedBox(
-                                                  width: 250,
-                                                  child: Text(
-                                                    event.location,
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 10,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
+                                          ),
+
+                                          TextButton(
+                                            onPressed: () {},
+                                            child: const Text(
+                                              'Claim Ownership?',
+                                              style: TextStyle(
+                                                  color: Colors.red,
+                                                  fontSize: 8),
                                             ),
-                                            const SizedBox(height: 24),
-                                            const Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceAround,
-                                              children: [
-                                                FaIcon(
-                                                  Icons.add_task_rounded,
-                                                  size: 10,
-                                                  color: Colors.grey,
-                                                ),
-                                                SizedBox(
-                                                  width: 250,
-                                                  child: Expanded(
-                                                    flex: 3,
-                                                    child: Text(
-                                                      'Created by Camelendar Team',
-                                                      style: TextStyle(
-                                                        fontSize: 10,
-                                                        color: Colors.grey,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            SizedBox(height: 16),
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.end,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                SizedBox(
-                                                  child: Expanded(
-                                                    flex: 1,
-                                                    child: TextButton(
-                                                      onPressed: () {},
-                                                      child: const Text(
-                                                        'Claim Ownership?',
-                                                        style: TextStyle(
-                                                            color: Colors.red,
-                                                            fontSize: 12),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                Container(
-                                                  decoration: BoxDecoration(
-                                                      border: Border.all(
-                                                          color: Colors.red,
-                                                          width: .5),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              50)),
-                                                  child: IconButton(
-                                                    constraints: BoxConstraints(
-                                                      maxHeight: 50,
-                                                      maxWidth: 50,
-                                                    ),
-                                                    onPressed: () {},
-                                                    icon: FaIcon(
-                                                      Icons
-                                                          .arrow_right_outlined,
-                                                      size: 35,
-                                                      color: Colors.red,
-                                                    ),
-                                                  ),
-                                                )
-                                              ],
-                                            ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
@@ -311,23 +273,22 @@ class _EventDisplayState extends State<EventDisplay> {
                             );
                           },
                         ),
-                      ): _tabIndex ==1 ?
-                      Container(
-                        width: 400,
-                        height: 450,
-                        child: EventCalendar(),
-                      ) : 
-                      Container(
-                        child: Text(
-                                    'map',
-                                    style: TextStyle(
-                                        fontSize: 40, color: Colors.white),
-                                  ),
-                      ) 
-                  
-                    ],
-                  )
-                ),
+                      )
+                    : _tabIndex == 1
+                        ? Container(
+                            width: 400,
+                            height: 450,
+                            child: EventCalendar(),
+                          )
+                        : Container(
+                            child: Text(
+                              'map',
+                              style:
+                                  TextStyle(fontSize: 40, color: Colors.white),
+                            ),
+                          )
+              ],
+            )),
         // floatingActionButton: Container(
         //   decoration: const BoxDecoration(shape: BoxShape.circle, boxShadow: [
         //     BoxShadow(
@@ -355,7 +316,7 @@ class _EventDisplayState extends State<EventDisplay> {
   }
 }
 
-AppBar buildAppBar(BuildContext context,title,color) {
+AppBar buildAppBar(BuildContext context, title, color) {
   return AppBar(
     toolbarHeight: 70,
     title: Text(title,
