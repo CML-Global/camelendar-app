@@ -18,15 +18,29 @@ class EventDisplay extends StatefulWidget {
 }
 
 class _EventDisplayState extends State<EventDisplay> {
+  TextEditingController searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
   bool _showPastEvents = false;
   int footerIndex = 0;
   int _tabIndex = 0;
   List<Event> eventList = [];
+  List<dynamic> _eventTypes = [];
+
   void _onTabChanged(int index) {
     setState(() {
       _tabIndex = index;
       print(_tabIndex);
     });
+  }
+
+  void _extractEventTypes() {
+    _eventTypes = eventList.map((event) => event.type).toList();
   }
 
   @override
@@ -58,8 +72,22 @@ class _EventDisplayState extends State<EventDisplay> {
     return DateFormat('yyyy-MM-dd').format(dateTime);
   }
 
+  List<Event> get filteredEvents {
+    final query = searchController.text.toLowerCase();
+    if (query.isEmpty) {
+      return eventList;
+    } else {
+      return eventList.where((event) {
+        return event.title.toLowerCase().contains(query);
+      }).toList();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    List<String> eventTypes = ['Concert', 'Conference', 'Exhibition', 'Sport'];
+    String? selectedEventType;
+
     return Container(
       decoration: BoxDecoration(
         image: DecorationImage(
@@ -81,8 +109,13 @@ class _EventDisplayState extends State<EventDisplay> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: TextField(
+                        onChanged: (value) {
+                          setState(
+                              () {}); // Trigger a rebuild with the new filter.
+                        },
+                        controller: searchController,
                         style: TextStyle(color: Colors.white),
                         cursorColor: Colors.white,
                         decoration: InputDecoration(
@@ -123,12 +156,50 @@ class _EventDisplayState extends State<EventDisplay> {
                           )
                   ],
                 ),
+                SizedBox(
+                  height: 16,
+                ),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.filter_alt_outlined,
+                      color: Colors.white,
+                    ),
+                    Text(
+                      'FIlters :',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+                DropdownButton<String>(
+  value: selectedEventType,
+  hint: Text('Select Event Type'),
+  icon: Icon(Icons.arrow_downward),
+  elevation: 16,
+  style: TextStyle(color: Colors.deepPurple),
+  underline: Container(
+    height: 2,
+    color: Colors.deepPurpleAccent,
+  ),
+  onChanged: (String? newValue) {
+    setState(() {
+      selectedEventType = newValue;
+    });
+  },
+  items: eventTypes.map<DropdownMenuItem<String>>((String value) {
+    return DropdownMenuItem<String>(
+      value: value,
+      child: Text(value),
+    );
+  }).toList(),
+),
                 _tabIndex == 0
                     ? Expanded(
                         child: ListView.builder(
-                          itemCount: eventList.length,
+                          itemCount: filteredEvents.length,
                           itemBuilder: (context, index) {
                             // final event = eventList[index];
+                            final event = filteredEvents[index];
                             return Card(
                               margin: EdgeInsets.symmetric(vertical: 15),
                               shadowColor:
@@ -150,7 +221,7 @@ class _EventDisplayState extends State<EventDisplay> {
                                       // Logo as a circle
                                       ClipOval(
                                         child: Image.network(
-                                          "https://camelworldmap.com/uploads/logos/${eventList[index].logo}",
+                                          "https://camelworldmap.com/uploads/logos/${event.logo}",
                                           width: 60, // Adjust size as needed
                                           height: 60, // Adjust size as needed
                                           fit: BoxFit.contain,
@@ -164,7 +235,7 @@ class _EventDisplayState extends State<EventDisplay> {
                                                 CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                eventList[index].title,
+                                                event.title,
                                                 style: const TextStyle(
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.bold,
@@ -172,24 +243,11 @@ class _EventDisplayState extends State<EventDisplay> {
                                               ),
                                               const SizedBox(height: 8),
                                               Row(
-                                                crossAxisAlignment: CrossAxisAlignment.center,
-                                                children: [
-                                                  Icon(FontAwesomeIcons.calendar,color: Colors.white,size: 8,),
-                                                  SizedBox(width: 4,),
-                                                  Text(
-                                                    "Date: ${formatDateString(eventList[index].dateStart.toString())}",
-                                                    style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 8),
-                                                  ),
-                                                ],
-                                              ),
-                                              
-                                              const SizedBox(height: 4),
-                                              Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.center,
                                                 children: [
                                                   Icon(
-                                                    FontAwesomeIcons.locationPin,
+                                                    FontAwesomeIcons.calendar,
                                                     color: Colors.white,
                                                     size: 8,
                                                   ),
@@ -197,7 +255,27 @@ class _EventDisplayState extends State<EventDisplay> {
                                                     width: 4,
                                                   ),
                                                   Text(
-                                                    eventList[index].location,
+                                                    "Date: ${formatDateString(event.dateStart.toString())}",
+                                                    style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 8),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    FontAwesomeIcons
+                                                        .locationPin,
+                                                    color: Colors.white,
+                                                    size: 8,
+                                                  ),
+                                                  SizedBox(
+                                                    width: 4,
+                                                  ),
+                                                  Text(
+                                                    event.location,
                                                     style: const TextStyle(
                                                         color: Colors.white,
                                                         fontSize: 8),
