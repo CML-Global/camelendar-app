@@ -30,7 +30,14 @@ class _EventDisplayState extends State<EventDisplay> {
   int footerIndex = 0;
   int _tabIndex = 0;
   List<Event> eventList = [];
-  List<dynamic> _eventTypes = [];
+  List<String> _eventAccess = [];
+  List<String> _eventType = [];
+  List<String> _eventTheme = [];
+  List<String> _eventAudience = [];
+  String? _selectedAccessMode;
+  String? _selectedEventType;
+  String? _selectedTheme;
+  String? _selectedAudience;
 
   void _onTabChanged(int index) {
     setState(() {
@@ -39,17 +46,16 @@ class _EventDisplayState extends State<EventDisplay> {
     });
   }
 
-  void _extractEventTypes() {
-    _eventTypes = eventList.map((event) => event.type).toList();
-  }
-
+// void _extractEventTypes() {
+//     _eventAccess = eventList.map((event) => event.type);
+//   }
   @override
   void initState() {
     super.initState();
-    getDataHttpPackage();
+    fetchEventData();
   }
 
-  void getDataHttpPackage() async {
+  void fetchEventData() async {
     try {
       final url =
           Uri.parse('https://camelworldmap.com/api/events?target=public');
@@ -59,6 +65,26 @@ class _EventDisplayState extends State<EventDisplay> {
           final List<dynamic> jsonData = jsonDecode(response.body);
           eventList =
               jsonData.map<Event>((json) => Event.fromJson(json)).toList();
+          _eventAccess = eventList
+              .map((event) => event.mode)
+              .whereType<String>()
+              .toSet()
+              .toList();
+          _eventType = eventList
+              .map((event) => event.type)
+              .whereType<String>()
+              .toSet()
+              .toList();
+          _eventTheme = eventList
+              .map((event) => event.theme)
+              .whereType<String>()
+              .toSet()
+              .toList();
+          _eventAudience = eventList
+              .map((event) => event.target)
+              .whereType<String>()
+              .toSet()
+              .toList();
         });
       } else {}
       // print(jsonDecode(response.body));
@@ -73,21 +99,54 @@ class _EventDisplayState extends State<EventDisplay> {
   }
 
   List<Event> get filteredEvents {
+    var filtered = eventList;
+
+    // search filter
     final query = searchController.text.toLowerCase();
-    if (query.isEmpty) {
-      return eventList;
-    } else {
-      return eventList.where((event) {
+    if (query.isNotEmpty) {
+      filtered = filtered.where((event) {
         return event.title.toLowerCase().contains(query);
       }).toList();
     }
+    // other filters
+    if (_selectedAccessMode != null && _selectedAccessMode!.isNotEmpty) {
+      filtered =
+          filtered.where((event) => event.mode == _selectedAccessMode).toList();
+    }
+
+    if (_selectedEventType != null && _selectedEventType!.isNotEmpty) {
+      filtered =
+          filtered.where((event) => event.type == _selectedEventType).toList();
+    }
+
+    if (_selectedTheme != null && _selectedTheme!.isNotEmpty) {
+      filtered =
+          filtered.where((event) => event.theme == _selectedTheme).toList();
+    }
+
+    if (_selectedAudience != null && _selectedAudience!.isNotEmpty) {
+      filtered =
+          filtered.where((event) => event.target == _selectedAudience).toList();
+    }
+
+    return filtered;
+  }
+
+  void _removeFilters() {
+    setState(() {
+      _selectedAccessMode = null;
+      _selectedEventType = null;
+      _selectedTheme = null;
+      _selectedAudience = null;
+
+      searchController.clear();
+
+      _showPastEvents = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    List<String> eventTypes = ['Concert', 'Conference', 'Exhibition', 'Sport'];
-    String? selectedEventType;
-
     return Container(
       decoration: BoxDecoration(
         image: DecorationImage(
@@ -112,8 +171,7 @@ class _EventDisplayState extends State<EventDisplay> {
                     Expanded(
                       child: TextField(
                         onChanged: (value) {
-                          setState(
-                              () {}); // Trigger a rebuild with the new filter.
+                          setState(() {});
                         },
                         controller: searchController,
                         style: TextStyle(color: Colors.white),
@@ -160,45 +218,164 @@ class _EventDisplayState extends State<EventDisplay> {
                   height: 16,
                 ),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      Icons.filter_alt_outlined,
-                      color: Colors.white,
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.filter_alt_outlined,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                        SizedBox(
+                          width: 4,
+                        ),
+                        Text(
+                          'FIlters :',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ],
                     ),
-                    Text(
-                      'FIlters :',
-                      style: TextStyle(color: Colors.white),
+                    Row(
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            _removeFilters();
+                          },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.filter_alt_off_outlined,
+                                color: Colors.red,
+                                size: 12,
+                              ),
+                              SizedBox(
+                                width: 4,
+                              ),
+                              const Text(
+                                'Remove Filters',
+                                style:
+                                    TextStyle(color: Colors.red, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                DropdownButton<String>(
-  value: selectedEventType,
-  hint: Text('Select Event Type'),
-  icon: Icon(Icons.arrow_downward),
-  elevation: 16,
-  style: TextStyle(color: Colors.deepPurple),
-  underline: Container(
-    height: 2,
-    color: Colors.deepPurpleAccent,
-  ),
-  onChanged: (String? newValue) {
-    setState(() {
-      selectedEventType = newValue;
-    });
-  },
-  items: eventTypes.map<DropdownMenuItem<String>>((String value) {
-    return DropdownMenuItem<String>(
-      value: value,
-      child: Text(value),
-    );
-  }).toList(),
-),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    DropdownButton<String>(
+                      value: _eventAccess.contains(_selectedAccessMode)
+                          ? _selectedAccessMode
+                          : null,
+                      hint: Text('Event Mode',
+                          style: TextStyle(color: Colors.white)),
+                      dropdownColor: Colors.black,
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedAccessMode = newValue;
+                        });
+                      },
+                      items: _eventAccess
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value,
+                              style: TextStyle(color: Colors.white)),
+                        );
+                      }).toList(),
+                    ),
+                    SizedBox(
+                      width: 16,
+                    ),
+                    DropdownButton<String>(
+                      value: _eventType.contains(_selectedEventType)
+                          ? _selectedEventType
+                          : null,
+                      hint: Text('Event Type',
+                          style: TextStyle(color: Colors.white)),
+                      dropdownColor: Colors.black,
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedEventType = newValue;
+                        });
+                      },
+                      items: _eventType
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value,
+                              style: TextStyle(color: Colors.white)),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  width: 10,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Expanded(
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        value: _eventTheme.contains(_selectedTheme)
+                            ? _selectedTheme
+                            : null,
+                        hint: Text('Event Theme',
+                            style: TextStyle(color: Colors.white)),
+                        dropdownColor: Colors.black,
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedTheme = newValue;
+                          });
+                        },
+                        items: _eventTheme
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value,
+                                style: TextStyle(color: Colors.white)),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 16,
+                    ),
+                    DropdownButton<String>(
+                      value: _eventAudience.contains(_selectedAudience)
+                          ? _selectedAudience
+                          : null,
+                      hint: Text('Event Audience',
+                          style: TextStyle(color: Colors.white)),
+                      dropdownColor: Colors.black,
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedAudience = newValue;
+                        });
+                      },
+                      items: _eventAudience
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value,
+                              style: TextStyle(color: Colors.white)),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
                 _tabIndex == 0
                     ? Expanded(
                         child: ListView.builder(
                           itemCount: filteredEvents.length,
                           itemBuilder: (context, index) {
-                            // final event = eventList[index];
                             final event = filteredEvents[index];
                             return Card(
                               margin: EdgeInsets.symmetric(vertical: 15),
@@ -216,7 +393,6 @@ class _EventDisplayState extends State<EventDisplay> {
                                 child: Container(
                                   padding: EdgeInsets.symmetric(horizontal: 10),
                                   child: Row(
-                                    // Change Column to Row for horizontal layout
                                     children: [
                                       // Logo as a circle
                                       ClipOval(
@@ -286,7 +462,7 @@ class _EventDisplayState extends State<EventDisplay> {
                                           ),
                                         ),
                                       ),
-                                      // Claim Ownership and Arrow Icon on the right
+                                      //
                                       Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.center,
@@ -310,12 +486,11 @@ class _EventDisplayState extends State<EventDisplay> {
                                             width: 32,
                                             decoration: BoxDecoration(
                                               border: Border.all(
-                                                color: Colors
-                                                    .red, // Color of the border
-                                                width: 1, // Width of the border
+                                                color: Colors.red,
+                                                width: 1,
                                               ),
-                                              borderRadius: BorderRadius.circular(
-                                                  50), // Adjust the radius to make it more or less rounded
+                                              borderRadius:
+                                                  BorderRadius.circular(50),
                                             ),
                                             child: IconButton(
                                               highlightColor: Colors.white,
@@ -327,9 +502,7 @@ class _EventDisplayState extends State<EventDisplay> {
                                                 size: 15,
                                                 color: Colors.red,
                                               ),
-                                              // Adjust the padding to make the button larger or smaller
-                                              constraints:
-                                                  BoxConstraints(), // Apply constraints if needed to adjust the button's size
+                                              constraints: BoxConstraints(),
                                             ),
                                           ),
 
