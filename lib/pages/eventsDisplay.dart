@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
+import 'package:camelendar/pages/eventMap.dart';
 import 'package:http/http.dart' as http;
 import 'package:camelendar/models/event_Model.dart';
 import 'package:camelendar/pages/auth.dart';
@@ -19,7 +20,8 @@ class EventDisplay extends StatefulWidget {
 
 class _EventDisplayState extends State<EventDisplay> {
   TextEditingController searchController = TextEditingController();
-
+  int maxToShow = 2;
+  Set<int> expandedMonths = {};
   @override
   void dispose() {
     searchController.dispose();
@@ -34,6 +36,7 @@ class _EventDisplayState extends State<EventDisplay> {
   List<String> _eventType = [];
   List<String> _eventTheme = [];
   List<String> _eventAudience = [];
+  List<DateTime> _dateMonth = [];
   String? _selectedAccessMode;
   String? _selectedEventType;
   String? _selectedTheme;
@@ -85,17 +88,66 @@ class _EventDisplayState extends State<EventDisplay> {
               .whereType<String>()
               .toSet()
               .toList();
+          _dateMonth = eventList
+              .map((event) => event.dateStart)
+              .whereType<DateTime>()
+              .toSet()
+              .toList();
+
+          // Store the current year and month
+          final now = DateTime.now();
+          final currentYear = now.year;
+          final currentMonth = now.month;
+
+          // eventList = eventList.where((event) {
+          //   final eventYear = event.dateStart.year;
+          //   final eventMonth = event.dateStart.month;
+          //   final eventDay = event.dateStart.day;
+          //   return !_showPastEvents &&
+          //           (eventYear >= currentYear && eventMonth > currentMonth) ||
+          //       (eventYear == currentYear &&
+          //           eventMonth == currentMonth &&
+          //           eventDay >= now.day);
+          // }).toList();
         });
       } else {}
-      // print(jsonDecode(response.body));
     } catch (e) {
       print(e);
     }
   }
 
+  Map<String, List<Event>> groupEventsByMonth(List<Event> events) {
+    final Map<int, List<Event>> result = {};
+
+    for (final event in events) {
+      final month = event.dateStart.month;
+      if (!result.containsKey(month)) {
+        result[month] = [];
+      }
+      result[month]!.add(event);
+    }
+
+    // Sort the keys (month numbers) in chronological order
+    final sortedKeys = result.keys.toList()..sort((a, b) => a.compareTo(b));
+
+    // Create a new map with sorted keys and corresponding values
+    final sortedResult = <String, List<Event>>{
+      for (final key in sortedKeys)
+        DateFormat.MMMM('en_US').format(DateTime(DateTime.now().year, key, 1)):
+            result[key]!
+    };
+
+    return sortedResult;
+  }
+
   String formatDateString(String dateString) {
     DateTime dateTime = DateTime.parse(dateString);
-    return DateFormat('yyyy-MM-dd').format(dateTime);
+    return DateFormat.yMMMMd('en_US').format(dateTime);
+  }
+
+  String formatMonthString(String dateString) {
+    DateTime dateTime = DateTime.parse(dateString);
+    return DateFormat.yMMMM('en_US').format(dateTime);
   }
 
   List<Event> get filteredEvents {
@@ -106,6 +158,32 @@ class _EventDisplayState extends State<EventDisplay> {
     if (query.isNotEmpty) {
       filtered = filtered.where((event) {
         return event.title.toLowerCase().contains(query);
+      }).toList();
+    }
+    // print(_showPastEvents);
+
+    if (!_showPastEvents) {
+      filtered = filtered.where((event) {
+        final eventYear = event.dateStart.year;
+        final eventMonth = event.dateStart.month;
+        final eventDay = event.dateStart.day;
+        final now = DateTime.now();
+        return (eventYear >= now.year && eventMonth > now.month) ||
+            (eventYear == now.year &&
+                eventMonth == now.month &&
+                eventDay >= now.day);
+      }).toList();
+    } else {
+      filtered = filtered.where((event) {
+        final eventYear = event.dateStart.year;
+        final eventMonth = event.dateStart.month;
+        final eventDay = event.dateStart.day;
+        final now = DateTime.now();
+        return (eventYear < now.year && eventMonth > now.month) ||
+            (eventYear == now.year &&
+                eventMonth == now.month &&
+                eventDay <= now.day) ||
+            (eventYear == now.year && eventMonth < now.month);
       }).toList();
     }
     // other filters
@@ -147,6 +225,8 @@ class _EventDisplayState extends State<EventDisplay> {
 
   @override
   Widget build(BuildContext context) {
+    Map<dynamic, List<Event>> eventsByMonth =
+        groupEventsByMonth(filteredEvents);
     return Container(
       decoration: BoxDecoration(
         image: DecorationImage(
@@ -195,7 +275,7 @@ class _EventDisplayState extends State<EventDisplay> {
                           value: _showPastEvents,
                           onChanged: (value) {
                             setState(() {
-                              _showPastEvents = value;
+                              _showPastEvents = !_showPastEvents;
                             });
                           },
                           activeTrackColor: Colors.transparent,
@@ -374,87 +454,217 @@ class _EventDisplayState extends State<EventDisplay> {
                 _tabIndex == 0
                     ? Expanded(
                         child: ListView.builder(
-                          itemCount: filteredEvents.length,
+                          itemCount: eventsByMonth.length,
                           itemBuilder: (context, index) {
-                            final event = filteredEvents[index];
-                            return Card(
-                              margin: EdgeInsets.symmetric(vertical: 15),
-                              shadowColor:
-                                  const Color.fromARGB(38, 255, 255, 255),
-                              color: Colors.transparent,
-                              surfaceTintColor:
-                                  const Color.fromARGB(61, 0, 0, 0),
-                              elevation: 4,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: InkWell(
-                                onTap: () {},
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 10),
-                                  child: Row(
-                                    children: [
-                                      // Logo as a circle
-                                      ClipOval(
-                                        child: Image.network(
-                                          "https://camelworldmap.com/uploads/logos/${event.logo}",
-                                          width: 60, // Adjust size as needed
-                                          height: 60, // Adjust size as needed
-                                          fit: BoxFit.contain,
-                                        ),
+                            final month = eventsByMonth.keys.elementAt(index);
+                            final monthEvents = eventsByMonth[month]!;
+                            monthEvents.sort((a, b) {
+                              return a.dateStart.compareTo(b.dateStart);
+                            });
+                            eventsByMonth.entries.toList()
+                              ..sort((a, b) {
+                                return a.key.compareTo(b.key);
+                              });
+                            final event =
+                                monthEvents[index % monthEvents.length];
+                            return ExpansionTile(
+                              // backgroundColor: Colors.red,collapsedBackgroundColor: Colors.green,
+                              title: RichText(
+                                text: TextSpan(
+                                  text:
+                                      eventsByMonth.keys.elementAt(index) + " ",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                      text: event.dateStart.year.toString(),
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 16,
+                                        fontStyle: FontStyle.italic,
                                       ),
-                                      Expanded(
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              //Text.rich(  "${eventsByMonth.keys.elementAt(index)}   -  ${event.dateStart.year}",
+                              // style: TextStyle(color: Colors.white),
+
+                              initiallyExpanded: true,
+                              onExpansionChanged: (expanded) {
+                                // setState(() {
+                                //   if (expanded) {
+                                //     expandedMonths.add(month);
+                                //   } else {
+                                //     expandedMonths.remove(month);
+                                //   }
+                                // });
+                              },
+                              children: [
+                                Column(
+                                  children:
+                                      monthEvents.take(maxToShow).map((event) {
+                                    return Card(
+                                      margin:
+                                          EdgeInsets.symmetric(vertical: 15),
+                                      shadowColor: const Color.fromARGB(
+                                          38, 255, 255, 255),
+                                      color: Colors.transparent,
+                                      surfaceTintColor:
+                                          const Color.fromARGB(61, 0, 0, 0),
+                                      elevation: 4,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: InkWell(
+                                        onTap: () {},
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 10),
+                                          child: Row(
                                             children: [
-                                              Text(
-                                                event.title,
-                                                style: const TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.white),
+                                              // Logo as a circle
+                                              ClipOval(
+                                                child: Image.network(
+                                                  "https://camelworldmap.com/uploads/logos/${event.logo}",
+                                                  width:
+                                                      60, // Adjust size as needed
+                                                  height:
+                                                      60, // Adjust size as needed
+                                                  fit: BoxFit.contain,
+                                                ),
                                               ),
-                                              const SizedBox(height: 8),
-                                              Row(
+                                              Expanded(
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(8.0),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        event.title,
+                                                        style: const TextStyle(
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color:
+                                                                Colors.white),
+                                                      ),
+                                                      const SizedBox(height: 8),
+                                                      Row(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          Icon(
+                                                            FontAwesomeIcons
+                                                                .calendar,
+                                                            color: Colors.white,
+                                                            size: 8,
+                                                          ),
+                                                          SizedBox(
+                                                            width: 4,
+                                                          ),
+                                                          Text(
+                                                            "Date: ${formatDateString(event.dateStart.toString())}",
+                                                            style:
+                                                                const TextStyle(
+                                                                    color: Colors
+                                                                        .white,
+                                                                    fontSize:
+                                                                        8),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Row(
+                                                        children: [
+                                                          Icon(
+                                                            FontAwesomeIcons
+                                                                .locationPin,
+                                                            color: Colors.white,
+                                                            size: 8,
+                                                          ),
+                                                          SizedBox(
+                                                            width: 4,
+                                                          ),
+                                                          Text(
+                                                            event.location,
+                                                            style:
+                                                                const TextStyle(
+                                                                    color: Colors
+                                                                        .white,
+                                                                    fontSize:
+                                                                        8),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                              //
+                                              Column(
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.center,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceAround,
                                                 children: [
-                                                  Icon(
-                                                    FontAwesomeIcons.calendar,
-                                                    color: Colors.white,
-                                                    size: 8,
-                                                  ),
+                                                  // IconButton(
+                                                  //   onPressed: () {},
+                                                  //   icon: FaIcon(
+                                                  //     Icons.arrow_right_outlined,
+                                                  //     size: 20,
+                                                  //     color: Colors.red,
+                                                  //   ),
+                                                  // ),
                                                   SizedBox(
-                                                    width: 4,
+                                                    height: 20,
                                                   ),
-                                                  Text(
-                                                    "Date: ${formatDateString(event.dateStart.toString())}",
-                                                    style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 8),
+                                                  Container(
+                                                    margin: EdgeInsets.all(15),
+                                                    height: 32,
+                                                    width: 32,
+                                                    decoration: BoxDecoration(
+                                                      border: Border.all(
+                                                        color: Colors.red,
+                                                        width: 1,
+                                                      ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              50),
+                                                    ),
+                                                    child: IconButton(
+                                                      highlightColor:
+                                                          Colors.white,
+                                                      splashColor: Colors.white,
+                                                      focusColor: Colors.red,
+                                                      onPressed: () {},
+                                                      icon: Icon(
+                                                        Icons
+                                                            .favorite_border_outlined,
+                                                        size: 15,
+                                                        color: Colors.red,
+                                                      ),
+                                                      constraints:
+                                                          BoxConstraints(),
+                                                    ),
                                                   ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    FontAwesomeIcons
-                                                        .locationPin,
-                                                    color: Colors.white,
-                                                    size: 8,
-                                                  ),
-                                                  SizedBox(
-                                                    width: 4,
-                                                  ),
-                                                  Text(
-                                                    event.location,
-                                                    style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 8),
+
+                                                  TextButton(
+                                                    onPressed: () {},
+                                                    child: const Text(
+                                                      'Claim Ownership?',
+                                                      style: TextStyle(
+                                                          color: Colors.red,
+                                                          fontSize: 8),
+                                                    ),
                                                   ),
                                                 ],
                                               ),
@@ -462,65 +672,34 @@ class _EventDisplayState extends State<EventDisplay> {
                                           ),
                                         ),
                                       ),
-                                      //
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceAround,
-                                        children: [
-                                          // IconButton(
-                                          //   onPressed: () {},
-                                          //   icon: FaIcon(
-                                          //     Icons.arrow_right_outlined,
-                                          //     size: 20,
-                                          //     color: Colors.red,
-                                          //   ),
-                                          // ),
-                                          SizedBox(
-                                            height: 20,
-                                          ),
-                                          Container(
-                                            margin: EdgeInsets.all(15),
-                                            height: 32,
-                                            width: 32,
-                                            decoration: BoxDecoration(
-                                              border: Border.all(
-                                                color: Colors.red,
-                                                width: 1,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(50),
-                                            ),
-                                            child: IconButton(
-                                              highlightColor: Colors.white,
-                                              splashColor: Colors.white,
-                                              focusColor: Colors.red,
-                                              onPressed: () {},
-                                              icon: Icon(
-                                                Icons.favorite_border_outlined,
-                                                size: 15,
-                                                color: Colors.red,
-                                              ),
-                                              constraints: BoxConstraints(),
-                                            ),
-                                          ),
-
-                                          TextButton(
-                                            onPressed: () {},
-                                            child: const Text(
-                                              'Claim Ownership?',
-                                              style: TextStyle(
-                                                  color: Colors.red,
-                                                  fontSize: 8),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
+                                    );
+                                  }).toList(),
                                 ),
-                              ),
+                                if (monthEvents.length > 2)
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        if (maxToShow == 10) {
+                                          maxToShow = 2;
+                                        } else {
+                                          maxToShow = 10;
+                                        }
+                                        print('pressed');
+                                      });
+                                    },
+                                    child: maxToShow == 2
+                                        ? Text(
+                                            'Show more',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          )
+                                        : Text(
+                                            'Show less',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                  ),
+                              ],
                             );
                           },
                         ),
@@ -528,15 +707,11 @@ class _EventDisplayState extends State<EventDisplay> {
                     : _tabIndex == 1
                         ? Container(
                             width: 400,
-                            height: 450,
-                            child: EventCalendar(),
+                            height: 330,
+                            child: EventCalendar(eventList: filteredEvents),
                           )
-                        : Container(
-                            child: Text(
-                              'map',
-                              style:
-                                  TextStyle(fontSize: 40, color: Colors.white),
-                            ),
+                        : SingleChildScrollView(
+                            child: EventMap(eventList: filteredEvents),
                           )
               ],
             )),
@@ -674,3 +849,13 @@ AppBar buildAppBar(BuildContext context, title, color) {
     titleSpacing: 10,
   );
 }
+
+// Card code :
+
+/*
+
+
+
+  
+
+*/

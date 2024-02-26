@@ -1,44 +1,60 @@
+import 'package:camelendar/models/event_Model.dart';
 import 'package:flutter/material.dart';
+import 'package:camelendar/pages/eventInfo.dart';
 
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 class EventCalendar extends StatelessWidget {
-  const EventCalendar({super.key});
+  const EventCalendar({super.key, required this.eventList});
+
+  final List<Event> eventList;
+  Color _parseColor(String colorString) {
+    final colorInt = int.parse(colorString.replaceAll('#', '0xff'), radix: 16);
+    return Color(colorInt);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
-      child: Scaffold(
-        body: SfCalendar(
-          
-          view: CalendarView.timelineMonth,
-          backgroundColor: Colors.transparent,
-          dataSource: EventData(getEvents()),
-        ),
+      child: SfCalendar(
+        view: CalendarView.timelineMonth,
+        backgroundColor: Colors.white,
+        dataSource: EventData(getAppointments(eventList)),
+        onTap: (CalendarTapDetails details) {
+          if (details.appointments != null &&
+              details.appointments!.isNotEmpty) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    EventInfo(title: details.appointments![0].subject),
+              ),
+            );
+          }
+        },
       ),
     );
   }
 }
 
-List<Appointment> getEvents() {
-  
-  List<Appointment> events = <Appointment>[];
-  final DateTime today = DateTime.now();
-  final DateTime startTime =
-      DateTime(today.year, today.month, today.day, 12, 0, 0);
-  final DateTime endTime = startTime.add(const Duration(days: 2));
-  events.add(Appointment(
-      startTime: DateTime(2024, 02, 9, 10),
-      endTime: DateTime(2024, 02, 14, 10),
-      subject: 'Camel Event',
-      color: Colors.blue.shade900));
-  events.add(Appointment(
-      startTime: startTime,
-      endTime: endTime,
-      subject: 'Camel efefe',
-      color: Colors.blue.shade600));
-  return events;
+Color colorFromHex(String hexColor) {
+  final hexCode = hexColor.replaceFirst('#', '');
+  return Color(int.parse('FF$hexCode', radix: 16));
+}
+
+List<Appointment> getAppointments(List<Event> events) {
+  List<Appointment> appointments = <Appointment>[];
+  for (Event event in events) {
+    Color color = colorFromHex(event.color);
+    appointments.add(Appointment(
+      startTime: event.dateStart,
+      endTime: event.dateEnd,
+      subject: event.title,
+      color:color,
+    ));
+  }
+  return appointments;
 }
 
 class EventData extends CalendarDataSource {

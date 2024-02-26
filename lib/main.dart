@@ -1,5 +1,7 @@
+import 'package:camelendar/models/event_Model.dart';
 import 'package:camelendar/pages/auth.dart';
 import 'package:camelendar/pages/chat.dart';
+import 'package:camelendar/pages/eventMap.dart';
 import 'package:camelendar/pages/eventsDisplay.dart';
 import 'package:camelendar/pages/home.dart';
 import 'package:camelendar/pages/messaging.dart';
@@ -13,13 +15,13 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
+  List<Event> event;
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'Cairo'),
-      home: HomePage(),
+      home: EventMap(eventList: [],),
       initialRoute: '/',
       routes: {
         // '/': (context) => const HomePage(),
@@ -29,7 +31,6 @@ class MyApp extends StatelessWidget {
         '/org_pub': (context) => const OrganiserPublisher(),
         '/chat': (context) => const ChatPage(),
         '/message': (context) => const MessagingPage(),
-        
       },
     );
   }
