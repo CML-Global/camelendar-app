@@ -710,9 +710,9 @@ class _EventDisplayState extends State<EventDisplay> {
                             height: 330,
                             child: EventCalendar(eventList: filteredEvents),
                           )
-                        : SingleChildScrollView(
+                        : Expanded(
                             child: EventMap(eventList: filteredEvents),
-                          )
+                          ),
               ],
             )),
         // floatingActionButton: Container(
