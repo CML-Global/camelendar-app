@@ -4,6 +4,7 @@ import 'package:camelendar/pages/eventsDisplay.dart';
 import 'package:camelendar/pages/home.dart';
 import 'package:camelendar/pages/messaging.dart';
 import 'package:camelendar/pages/organiser_publisher.dart';
+import 'package:camelendar/pages/profileScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -19,7 +20,7 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'Cairo'),
-      home: EventDisplay(),
+      home: ProfilePage(),
       initialRoute: '/',
       routes: {
         // '/': (context) => const HomePage(),
