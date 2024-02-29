@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'Cairo'),
-      home: ProfilePage(),
+      home: HomePage(),
       initialRoute: '/',
       routes: {
         // '/': (context) => const HomePage(),

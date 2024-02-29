@@ -5,6 +5,7 @@ import 'package:camelendar/models/user_model.dart';
 import 'package:camelendar/pages/chatScreen.dart';
 import 'package:camelendar/pages/eventsDisplay.dart';
 import 'package:camelendar/pages/home.dart';
+import 'package:camelendar/widgets/customAppbar.dart';
 import 'package:camelendar/widgets/custom_Container.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -39,7 +40,8 @@ class _ChatPageState extends State<ChatPage> {
         ),
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          appBar: buildAppBar(context, 'Chat', Colors.transparent),
+          appBar: CustomAppbar(
+              title: 'Event', color: Color.fromRGBO(19, 22, 40, 1)),
           body: Column(
             children: [
               chatContact(height: height, users: users),

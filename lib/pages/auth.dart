@@ -1,6 +1,8 @@
 import 'package:camelendar/pages/organiser_publisher.dart';
+import 'package:camelendar/widgets/customAppbar.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_sign_in/google_sign_in.dart'; // Add this line
 
 class Auth extends StatelessWidget {
   const Auth({super.key});
@@ -16,8 +18,8 @@ class Auth extends StatelessWidget {
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: buildAppBar(),
-        body: buildAuthBody(),
+        appBar: CustomAppbar(title: 'Event', color: Color.fromRGBO(19, 22, 40, 1)),
+        body: buildAuthBody(context),
         floatingActionButton: Container(
           decoration: const BoxDecoration(shape: BoxShape.circle, boxShadow: [
             BoxShadow(
@@ -42,111 +44,11 @@ class Auth extends StatelessWidget {
     );
   }
 
-  AppBar buildAppBar() {
-    return AppBar(
-      toolbarHeight: 70,
-      title: Text('Camelendar',
-          style: TextStyle(
-            fontFamily: 'Cairo',
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          )),
-      backgroundColor: Color.fromRGBO(19, 22, 40, 1),
-      elevation: 0.5,
-      actions: <Widget>[
-        Container(
-          decoration: BoxDecoration(
-            color: Color.fromRGBO(19, 22, 40, 1),
-          ),
-          child: PopupMenuButton<String>(
-            onSelected: (String result) {
-              print("Selected: $result");
-            },
-            color: Color.fromRGBO(19, 22, 40, 1),
-            elevation: 0,
-            offset: Offset(0, 50),
-            icon: Icon(
-              Icons.menu,
-              color: Colors.white,
-            ),
-            itemBuilder: (BuildContext context) {
-              return [
-                PopupMenuItem(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const OrganiserPublisher()),
-                    );
-                  },
-                  value: "submit_event",
-                  child: const Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          "Submit event",
-                          style: TextStyle(
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  onTap: () {
-                    Navigator.pushNamed(context, '/auth');
-                  },
-                  value: "join",
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          "Join",
-                          style: TextStyle(
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                            shape: BoxShape.rectangle, color: Colors.white),
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.arrow_forward_ios,
-                            color: Color.fromRGBO(19, 22, 40, 1),
-                          ),
-                          onPressed: () {},
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ];
-            },
-          ),
-        ),
-      ],
-      leading: Container(
-        padding: EdgeInsets.all(7),
-        child: Image.asset('assets/images/logo.png'),
-      ),
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(25),
-              bottomRight: Radius.circular(25))),
-      titleSpacing: 0,
-    );
-  }
 }
 
-Column buildAuthBody() {
+Column buildAuthBody(BuildContext context) {
   return Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-
+    mainAxisAlignment: MainAxisAlignment.center,
     children: [
       Container(
         padding: EdgeInsets.all(5),
@@ -197,7 +99,9 @@ Column buildAuthBody() {
                 Container(
                   width: 250,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      _signInWithGoogle(context);
+                    },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -294,6 +198,30 @@ Column buildAuthBody() {
   );
 }
 
+Future<void> _signInWithGoogle(BuildContext context) async {
+  try {
+    GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
+    GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+    if (googleUser == null) return;
+
+
+    String email = googleUser.email ?? "";
+    String displayName = googleUser.displayName ?? "";
+    String photoUrl = googleUser.photoUrl ?? "";
+
+
+    print("Email: $email");
+    print("Name: $displayName");
+    print("Photo URL: $photoUrl");
+
+    Navigator.pushNamed(context, '/events');
+  } catch (error) {
+    print(error);
+  }
+}
+
+
 Container buildBottomNavbar() {
   return Container(
     color: Color.fromRGBO(30, 0, 20, .3),
@@ -303,7 +231,6 @@ Container buildBottomNavbar() {
       children: <Widget>[
         Expanded(
             child: IconButton(
-              
                 icon: FaIcon(
                   FontAwesomeIcons.book,
                   color: Colors.white,
