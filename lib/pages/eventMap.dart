@@ -38,27 +38,43 @@ class EventMap extends StatelessWidget {
                                 showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title: Text(event.title),
-                                      content: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(event.description),
-                                          SizedBox(height: 5),
-                                          Text(
-                                              'Date: ${DateFormat('yyyy-MM-dd').format(event.dateStart)}'),
-                                          SizedBox(height: 5),
-                                          Text('Location: ${event.location}'),
+                                    return SingleChildScrollView(
+                                      child: AlertDialog(
+                                        backgroundColor: Color.fromRGBO(6, 12, 45, 1),
+                                        surfaceTintColor: Color.fromRGBO(6, 12, 45, 1),
+                                        title: Text(event.title,style: TextStyle(color: Colors.white),),
+                                        content: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(event.description,
+                                              style:
+                                                  TextStyle(color: Colors.white),
+                                            ),
+                                            SizedBox(height: 5),
+                                            Text(
+                                                'Date: ${DateFormat('yyyy-MM-dd').format(event.dateStart)}',
+                                              style:
+                                                  TextStyle(color: Colors.white),
+                                            ),
+                                            SizedBox(height: 5),
+                                            Text('Location: ${event.location}',
+                                              style:
+                                                  TextStyle(color: Colors.white),
+                                            ),
+                                          ],
+                                        ),
+                                        actions: <Widget>[
+                                          TextButton(
+                                            child: Text('Close',
+                                              style:
+                                                  TextStyle(color: Colors.white),
+                                            ),
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                          ),
                                         ],
                                       ),
-                                      actions: <Widget>[
-                                        TextButton(
-                                          child: Text('Close'),
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                        ),
-                                      ],
                                     );
                                   },
                                 );

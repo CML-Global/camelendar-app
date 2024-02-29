@@ -1,17 +1,15 @@
-import 'package:camelendar/models/event_Model.dart';
 import 'package:flutter/material.dart';
-import 'package:camelendar/pages/eventInfo.dart';
-
+import 'package:get/get.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
+import 'package:intl/intl.dart';
+// Import collection package if necessary (for older Dart versions)
+// import 'package:collection/collection.dart';
+import 'package:camelendar/models/event_Model.dart';
 
 class EventCalendar extends StatelessWidget {
-  const EventCalendar({super.key, required this.eventList});
-
   final List<Event> eventList;
-  Color _parseColor(String colorString) {
-    final colorInt = int.parse(colorString.replaceAll('#', '0xff'), radix: 16);
-    return Color(colorInt);
-  }
+
+  const EventCalendar({Key? key, required this.eventList}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -24,37 +22,72 @@ class EventCalendar extends StatelessWidget {
         onTap: (CalendarTapDetails details) {
           if (details.appointments != null &&
               details.appointments!.isNotEmpty) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    EventInfo(title: details.appointments![0].subject),
-              ),
+            final Event? event = eventList.firstWhereOrNull(
+              (e) => e.title == details.appointments![0].subject,
             );
+
+            // Check if an event was found before showing the dialog
+            if (event != null) {
+              showDialog(
+              // barrierColor: Colors.white,
+                context: context,
+                builder: (BuildContext context) {
+                  return SingleChildScrollView(
+                    child: AlertDialog(
+                    surfaceTintColor: Color.fromRGBO(6, 12, 45, 1),
+                    backgroundColor: Color.fromRGBO(6, 12, 45, 1),
+                      title: Text(event.title,
+                          style: TextStyle(color: Colors.white)),
+                      content: SingleChildScrollView(
+                        child: ListBody(
+                          children: <Widget>[
+                            Text(event.description,
+                                style: TextStyle(color: Colors.white)),
+                            SizedBox(height: 5),
+                            Text(
+                                'Date: ${DateFormat('yyyy-MM-dd').format(event.dateStart)}',
+                                style: TextStyle(color: Colors.white)),
+                            SizedBox(height: 5),
+                            Text('Location: ${event.location}',
+                                style: TextStyle(color: Colors.white)),
+                          ],
+                        ),
+                      ),
+                      actions: <Widget>[
+                        TextButton(
+                          child: Text('Close',style: TextStyle(color: Colors.white),),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            }
           }
         },
       ),
     );
   }
-}
 
-Color colorFromHex(String hexColor) {
-  final hexCode = hexColor.replaceFirst('#', '');
-  return Color(int.parse('FF$hexCode', radix: 16));
-}
-
-List<Appointment> getAppointments(List<Event> events) {
-  List<Appointment> appointments = <Appointment>[];
-  for (Event event in events) {
-    Color color = colorFromHex(event.color);
-    appointments.add(Appointment(
-      startTime: event.dateStart,
-      endTime: event.dateEnd,
-      subject: event.title,
-      color:color,
-    ));
+  List<Appointment> getAppointments(List<Event> events) {
+    return events.map<Appointment>((event) {
+      return Appointment(
+        startTime: event.dateStart,
+        endTime: event.dateEnd,
+        subject: event.title,
+        color: colorFromHex(event.color),
+      );
+    }).toList();
   }
-  return appointments;
+
+  Color colorFromHex(String hexColor) {
+    final hexCode = hexColor.replaceFirst('#', '');
+    return Color(int.parse('FF$hexCode', radix: 16));
+  }
+
 }
 
 class EventData extends CalendarDataSource {

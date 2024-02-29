@@ -1,8 +1,10 @@
+import 'package:camelendar/main.dart';
 import 'package:camelendar/pages/organiser_publisher.dart';
 import 'package:camelendar/widgets/customAppbar.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_sign_in/google_sign_in.dart'; // Add this line
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Auth extends StatelessWidget {
   const Auth({super.key});
@@ -18,32 +20,32 @@ class Auth extends StatelessWidget {
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: CustomAppbar(title: 'Event', color: Color.fromRGBO(19, 22, 40, 1)),
+        appBar:
+            CustomAppbar(title: 'Event', color: Color.fromRGBO(19, 22, 40, 1)),
         body: buildAuthBody(context),
-        floatingActionButton: Container(
-          decoration: const BoxDecoration(shape: BoxShape.circle, boxShadow: [
-            BoxShadow(
-                color: Color.fromRGBO(19, 22, 40, 1),
-                spreadRadius: 7,
-                blurRadius: 1)
-          ]),
-          child: FloatingActionButton(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(45.0))),
-            backgroundColor: Color.fromRGBO(23, 19, 33, 1),
-            onPressed: () {},
-            child: const Icon(
-              Icons.event,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        bottomNavigationBar: buildBottomNavbar(),
+        // floatingActionButton: Container(
+        //   decoration: const BoxDecoration(shape: BoxShape.circle, boxShadow: [
+        //     BoxShadow(
+        //         color: Color.fromRGBO(19, 22, 40, 1),
+        //         spreadRadius: 7,
+        //         blurRadius: 1)
+        //   ]),
+        //   child: FloatingActionButton(
+        //     shape: RoundedRectangleBorder(
+        //         borderRadius: BorderRadius.all(Radius.circular(45.0))),
+        //     backgroundColor: Color.fromRGBO(23, 19, 33, 1),
+        //     onPressed: () {},
+        //     child: const Icon(
+        //       Icons.event,
+        //       color: Colors.white,
+        //     ),
+        //   ),
+        // ),
+        // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        // bottomNavigationBar: buildBottomNavbar(),
       ),
     );
   }
-
 }
 
 Column buildAuthBody(BuildContext context) {
@@ -203,24 +205,29 @@ Future<void> _signInWithGoogle(BuildContext context) async {
     GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
     GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
-    if (googleUser == null) return;
+    if (googleUser != null) {
+      SharedPreferences sharedPreferences =
+          await SharedPreferences.getInstance();
+      await sharedPreferences.setBool('isSignedIn', true);
+      print(sharedPreferences.getBool('isSignedIn'));
+      String email = googleUser.email ?? "";
+      String displayName = googleUser.displayName ?? "";
+      String photoUrl = googleUser.photoUrl ?? "";
 
+      await sharedPreferences.setString('email', email);
+      await sharedPreferences.setString('displayName', displayName);
+      await sharedPreferences.setString('photoUrl', photoUrl);
 
-    String email = googleUser.email ?? "";
-    String displayName = googleUser.displayName ?? "";
-    String photoUrl = googleUser.photoUrl ?? "";
+      print("Email: $email");
+      print("Name: $displayName");
+      print("Photo URL: $photoUrl");
 
-
-    print("Email: $email");
-    print("Name: $displayName");
-    print("Photo URL: $photoUrl");
-
-    Navigator.pushNamed(context, '/events');
+      Navigator.pushNamed(context, '/events');
+    }
   } catch (error) {
     print(error);
   }
 }
-
 
 Container buildBottomNavbar() {
   return Container(

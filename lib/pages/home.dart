@@ -2,9 +2,11 @@ import 'package:camelendar/pages/auth.dart';
 import 'package:camelendar/pages/eventsDisplay.dart';
 import 'package:camelendar/pages/organiser_publisher.dart';
 import 'package:camelendar/widgets/customAppbar.dart';
+import 'package:camelendar/widgets/customAppbarWrapper.dart';
 import 'package:camelendar/widgets/homeBottomNavbar.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,7 +16,34 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  bool _isSignedIn = false;
   int selectedIndex = 0;
+  late Future<bool> isSignedInFuture;
+  String? _userName;
+  String? _userPhotoUrl;
+  @override
+  void initState() {
+    super.initState();
+    isSignedInFuture = _getSignInState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('displayName');
+      _userPhotoUrl = prefs.getString('photoUrl');
+     
+        print("photo link :"+ _userPhotoUrl! + "user Name  :" + _userName!);
+   
+    });
+  }
+
+  Future<bool> _getSignInState() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('isSignedIn') ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -26,7 +55,12 @@ class _HomePageState extends State<HomePage> {
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: CustomAppbar(title: 'Camelendar', color: Color.fromRGBO(19, 22, 40, 1)),
+        appBar: CustomAppBarWrapper(
+          title: 'Camelendar',
+          color: Color.fromRGBO(19, 22, 40, 1),
+          userName: _userName,
+          userPhotoUrl: _userPhotoUrl,
+        ),
         body: buildHeroImage(context),
 
         // -------------------------------Footer--------------------------------
@@ -41,7 +75,11 @@ class _HomePageState extends State<HomePage> {
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.all(Radius.circular(45.0))),
             backgroundColor: Color.fromRGBO(23, 19, 33, 1),
-            onPressed: () {},
+            onPressed: () {
+              _isSignedIn 
+              ? Navigator.pushNamed(context, '/org_pub')
+              : Navigator.pushNamed(context, '/auth');
+            },
             child: const Icon(
               Icons.event,
               color: Colors.white,
@@ -54,9 +92,6 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
-
-
 }
 
 Column buildHeroImage(BuildContext context) {

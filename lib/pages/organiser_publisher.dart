@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:camelendar/pages/auth.dart';
+import 'package:camelendar/widgets/customAppbarWrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -19,7 +20,8 @@ class OrganiserPublisher extends StatelessWidget {
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: buildAppBar(context),
+        appBar: CustomAppBarWrapper(
+            title: 'Camelendar', color: Color.fromRGBO(19, 22, 40, 1)),
         body: Container(
           margin: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
           padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),

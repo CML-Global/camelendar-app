@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:ui';
 import 'package:camelendar/pages/eventMap.dart';
+import 'package:camelendar/widgets/customAppbarWrapper.dart';
 import 'package:http/http.dart' as http;
 import 'package:camelendar/models/event_Model.dart';
 import 'package:camelendar/pages/auth.dart';
@@ -11,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:camelendar/widgets/customAppbar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 class EventDisplay extends StatefulWidget {
   const EventDisplay({Key? key}) : super(key: key);
 
@@ -41,7 +43,9 @@ class _EventDisplayState extends State<EventDisplay> {
   String? _selectedEventType;
   String? _selectedTheme;
   String? _selectedAudience;
-
+late Future<bool> isSignedInFuture;
+  String? _userName;
+  String? _userPhotoUrl;
   void _onTabChanged(int index) {
     setState(() {
       _tabIndex = index;
@@ -56,8 +60,17 @@ class _EventDisplayState extends State<EventDisplay> {
   void initState() {
     super.initState();
     fetchEventData();
+    _loadUserData();
   }
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('displayName');
+      _userPhotoUrl = prefs.getString('photoUrl');
 
+      print("photo link :" + _userPhotoUrl! + "user Name  :" + _userName!);
+    });
+  }
   void fetchEventData() async {
     try {
       final url =
@@ -236,7 +249,12 @@ class _EventDisplayState extends State<EventDisplay> {
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar:CustomAppbar(title: 'Events', color: Color.fromRGBO(19, 22, 40, 1)),
+        appBar: CustomAppBarWrapper(
+          title: 'Events',
+          color: Color.fromRGBO(19, 22, 40, 1),
+          userName: _userName,
+          userPhotoUrl: _userPhotoUrl,
+        ),
 
         body: Container(
             margin: EdgeInsets.symmetric(vertical: 15, horizontal: 20),

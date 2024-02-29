@@ -2,7 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  final String? userName;
+  final String? userPhotoUrl;
+  final String? email;
+
+  // Constructor accepts userName, userPhotoUrl, and email.
+  const ProfilePage({
+    Key? key,
+    this.userName,
+    this.userPhotoUrl,
+    this.email,
+  }) : super(key: key);
 
   @override
   _ProfilePageState createState() => _ProfilePageState();
@@ -43,16 +53,21 @@ class _ProfilePageState extends State<ProfilePage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(
-                        Icons.keyboard_arrow_left_sharp,
-                        size: 24,
-                        color: Colors.white,
+                      IconButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        icon: Icon(
+                          Icons.arrow_back_ios_new,
+                          size: 24,
+                          color: Colors.white,
+                        ),
                       ),
-                      Icon(
-                        Icons.logout,
-                        size: 20,
-                        color: Colors.white,
-                      ),
+                      // Icon(
+                      //   Icons.logout,
+                      //   size: 20,
+                      //   color: Colors.white,
+                      // ),
                     ],
                   ),
                   SizedBox(
@@ -92,11 +107,15 @@ class _ProfilePageState extends State<ProfilePage> {
                                 SizedBox(
                                   height: 35,
                                 ),
-                                Text(
-                                  '@Anwar_036',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 24),
-                                ),
+                                if (widget.userName != null)
+                                  Text(
+                                    '@' + widget.userName!.replaceAll(' ', '_'),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                    ),
+                                  ),
+
                                 SizedBox(
                                   height: 8,
                                 ),
@@ -150,17 +169,15 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                         Positioned(
-                          top: 15,
+                          top: 0,
                           left: 0,
                           right: 0,
                           child: Center(
-                            child: Container(
-                              child: Image.asset(
-                                'assets/images/camel.png',
-                                width: innerWidth * 0.15,
-                                fit: BoxFit.fitWidth,
-                              ),
-                            ),
+                            child: widget.userPhotoUrl != null
+                 ? CircleAvatar(
+                    backgroundImage: NetworkImage(widget.userPhotoUrl!),
+                    radius: 40, // Example size
+                  ):Image.asset('assets/images/default_avatar.png')
                           ),
                         ),
                       ]);
@@ -188,7 +205,6 @@ class _ProfilePageState extends State<ProfilePage> {
                           Divider(
                             thickness: 2,
                           ),
-                         
                           Container(
                             height: height * 0.1,
                             child: Row(
@@ -216,7 +232,6 @@ class _ProfilePageState extends State<ProfilePage> {
                               ],
                             ),
                           ),
-                         
                           Text(
                             'My Photos ',
                             style: TextStyle(color: Colors.white, fontSize: 24),
@@ -224,7 +239,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           Divider(
                             thickness: 0.5,
                           ),
-                           SizedBox(
+                          SizedBox(
                             height: 12,
                           ),
                           Container(
